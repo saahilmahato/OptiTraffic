@@ -17,7 +17,7 @@ def main():
     screen = pygame.display.set_mode((width, height))
     clock = pygame.time.Clock()
 
-    world = World(width, height)
+    world = World(width, height, config)
     spawner = Spawner(config, world)
     renderer = Renderer(screen, world, config)
 

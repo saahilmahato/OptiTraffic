@@ -20,41 +20,34 @@ class Renderer:
         vertical_roads = []
         horizontal_roads = []
 
-        # Draw vertical roads
         for i in range(1, num_roads + 1):
             x_center = i * screen_w / (num_roads + 1)
             rect = pygame.Rect(x_center - road_w/2, 0, road_w, screen_h)
             pygame.draw.rect(self.screen, ROAD_COLOR, rect)
             vertical_roads.append(rect)
 
-        # Draw horizontal roads
         for j in range(1, num_roads + 1):
             y_center = j * screen_h / (num_roads + 1)
             rect = pygame.Rect(0, y_center - road_w/2, screen_w, road_w)
             pygame.draw.rect(self.screen, ROAD_COLOR, rect)
             horizontal_roads.append(rect)
 
-        # Compute intersection areas to skip lines there
         intersections = []
         for v_rect in vertical_roads:
             for h_rect in horizontal_roads:
                 intersections.append(v_rect.clip(h_rect))
 
-        # Draw dashed center lines on vertical roads
         for v_rect in vertical_roads:
             x = v_rect.centerx
             y = 0
             while y < screen_h:
                 seg_start = (x, y)
                 seg_end = (x, min(y + dash_len, screen_h))
-                # build a rect around this segment to test collision
                 seg_rect = pygame.Rect(x - line_w/2, y, line_w, dash_len)
-                # only draw if not inside any intersection
                 if not any(seg_rect.colliderect(ix) for ix in intersections):
                     pygame.draw.line(self.screen, LINE_COLOR, seg_start, seg_end, line_w)
                 y += dash_len + dash_gap
 
-        # Draw dashed center lines on horizontal roads
         for h_rect in horizontal_roads:
             y = h_rect.centery
             x = 0
@@ -69,5 +62,9 @@ class Renderer:
         for v in self.world.vehicles:
             rect = v.rect()
             pygame.draw.rect(self.screen, VEHICLE_COLOR, rect)
-        
+
+        # draw traffic lights from world
+        for light in self.world.traffic_lights:
+            light.draw(self.screen)
+
         pygame.display.flip()
