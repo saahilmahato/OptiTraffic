@@ -1,0 +1,14 @@
+window:
+  width: 800
+  height: 800
+
+fps: 60
+
+roads: 2
+
+spawning:
+  top: 0.5
+  bottom: 0.5
+  left: 0.5
+  right: 0.5
+
