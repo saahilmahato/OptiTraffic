@@ -1,14 +1,33 @@
-window:
-  width: 800
-  height: 800
+windowSize: 900
 
 fps: 60
 
-roads: 2
+lights:
+  greenTime: 5
+  yellowTime: 2
+  redTime: 5
+  points:
+    - [300, 300]
+    - [600, 300]
+    - [300, 600]
+    - [600, 600]
 
-spawning:
-  top: 0.5
-  bottom: 0.5
-  left: 0.5
-  right: 0.5
-
+spawn:
+  interval: 0.5
+  points:
+    - pos: [0, 280]
+      direction: [1, 0]
+    - pos: [0, 580]
+      direction: [1, 0]
+    - pos: [900, 320]
+      direction: [-1, 0]
+    - pos: [900, 620]
+      direction: [-1, 0]
+    - pos: [320, 0]
+      direction: [0, 1]
+    - pos: [620, 0]
+      direction: [0, 1]
+    - pos: [280, 900]
+      direction: [0, -1]
+    - pos: [580, 900]
+      direction: [0, -1]
