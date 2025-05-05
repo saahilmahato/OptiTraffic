@@ -6,6 +6,7 @@ class Renderer:
         self.screen = screen
         self.world = world
         self.config = config
+        self.font = pygame.font.SysFont('Arial', 14)
 
     def draw(self):
         self.screen.fill(BG_COLOR)
@@ -22,13 +23,13 @@ class Renderer:
 
         for i in range(1, num_roads + 1):
             x_center = i * screen_w / (num_roads + 1)
-            rect = pygame.Rect(x_center - road_w/2, 0, road_w, screen_h)
+            rect = pygame.Rect(x_center - road_w / 2, 0, road_w, screen_h)
             pygame.draw.rect(self.screen, ROAD_COLOR, rect)
             vertical_roads.append(rect)
 
         for j in range(1, num_roads + 1):
             y_center = j * screen_h / (num_roads + 1)
-            rect = pygame.Rect(0, y_center - road_w/2, screen_w, road_w)
+            rect = pygame.Rect(0, y_center - road_w / 2, screen_w, road_w)
             pygame.draw.rect(self.screen, ROAD_COLOR, rect)
             horizontal_roads.append(rect)
 
@@ -43,7 +44,7 @@ class Renderer:
             while y < screen_h:
                 seg_start = (x, y)
                 seg_end = (x, min(y + dash_len, screen_h))
-                seg_rect = pygame.Rect(x - line_w/2, y, line_w, dash_len)
+                seg_rect = pygame.Rect(x - line_w / 2, y, line_w, dash_len)
                 if not any(seg_rect.colliderect(ix) for ix in intersections):
                     pygame.draw.line(self.screen, LINE_COLOR, seg_start, seg_end, line_w)
                 y += dash_len + dash_gap
@@ -54,7 +55,7 @@ class Renderer:
             while x < screen_w:
                 seg_start = (x, y)
                 seg_end = (min(x + dash_len, screen_w), y)
-                seg_rect = pygame.Rect(x, y - line_w/2, dash_len, line_w)
+                seg_rect = pygame.Rect(x, y - line_w / 2, dash_len, line_w)
                 if not any(seg_rect.colliderect(ix) for ix in intersections):
                     pygame.draw.line(self.screen, LINE_COLOR, seg_start, seg_end, line_w)
                 x += dash_len + dash_gap
@@ -63,8 +64,24 @@ class Renderer:
             rect = v.rect()
             pygame.draw.rect(self.screen, VEHICLE_COLOR, rect)
 
-        # draw traffic lights from world
+        # draw traffic lights
+        approaching_map = self.world.get_all_approaching_vehicles()
+
         for light in self.world.traffic_lights:
             light.draw(self.screen)
+
+            stats = approaching_map.get(light.light_id, {})
+            x, y = light.position
+
+            lines = [
+                f"N: {len(stats.get('N', []))}",
+                f"S: {len(stats.get('S', []))}",
+                f"E: {len(stats.get('E', []))}",
+                f"W: {len(stats.get('W', []))}"
+            ]
+
+            for i, line in enumerate(lines):
+                text_surf = self.font.render(line, True, (255, 255, 255))
+                self.screen.blit(text_surf, (x + 20, y + i * 15 - 30))  # adjust offset if needed
 
         pygame.display.flip()

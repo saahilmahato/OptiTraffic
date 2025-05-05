@@ -10,7 +10,7 @@ class TrafficLight:
     """
     Simple traffic light with red, green, yellow states and configurable durations.
     """
-    def __init__(self, position, red_duration=5.0, green_duration=5.0, yellow_duration=2.0):
+    def __init__(self, position, light_id=None, red_duration=5.0, green_duration=5.0, yellow_duration=2.0):
         """
         Args:
             position (tuple): (x, y) center position of the light in pixels.
@@ -26,6 +26,8 @@ class TrafficLight:
         }
         self.state = LightState.RED
         self._timer = 0.0
+
+        self.light_id = light_id
 
     def update(self, dt):
         """
