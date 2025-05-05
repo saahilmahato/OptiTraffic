@@ -74,3 +74,4 @@ class World:
         conditions = traffic_conditions[index]
         if (dx, dy) in conditions and conditions[(dx, dy)]():
             self.traffic_lights[index].add_approaching_vehicle(vehicle)
+            vehicle.add_approaching_light(self.traffic_lights[index])
