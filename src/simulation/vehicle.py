@@ -6,16 +6,16 @@ VEHICLE_LENGTH = 10
 VEHICLE_WIDTH = 5
 
 class Vehicle:
-    def __init__(self, pos, direction, speed=100):
-        self.pos = np.array(pos, dtype=float)
+    def __init__(self, position, direction, speed=100):
+        self.position = np.array(position, dtype=float)
         self.direction = np.array(direction, dtype=float)
         self.speed = speed
 
     def update(self, dt):
-        self.pos += self.direction * self.speed * dt
+        self.position += self.direction * self.speed * dt
 
     def rect(self):
-        x, y = self.pos
+        x, y = self.position
         horizontal = abs(self.direction[0]) > abs(self.direction[1])
         if horizontal:
             w, h = VEHICLE_LENGTH, VEHICLE_WIDTH

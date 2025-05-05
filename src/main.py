@@ -18,18 +18,24 @@ def main():
     spawner = Spawner(config, world)
     renderer = Renderer(screen, world, config)
 
+    paused = False
+
     while True:
         dt = clock.tick(fps) / 1000.0
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                paused = not paused  # Toggle pause
 
-        renderer.draw()
-        spawner.spawn(dt)
-        world.draw(screen, dt)
+        if not paused:
+            renderer.draw()
+            spawner.spawn(dt)
+            world.draw(screen, dt)
+        
         pygame.display.flip()
-
 
 if __name__ == '__main__':
     main()
