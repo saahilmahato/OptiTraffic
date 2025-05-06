@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.simulation.traffic_light import TrafficLight, LightState
 from src.simulation.traffic_light_controller import TrafficLightController
 
@@ -17,9 +19,10 @@ class World:
         self.traffic_light_controller.update(dt)
 
         for vehicle in self.vehicles:
-            vehicle.update(dt)
+            if not self.should_stop(vehicle):
+                vehicle.update(dt)
             vehicle.draw(screen)
-        
+
         for light in self.traffic_lights:
             light.draw(screen)
 
@@ -74,4 +77,57 @@ class World:
         conditions = traffic_conditions[index]
         if (dx, dy) in conditions and conditions[(dx, dy)]():
             self.traffic_lights[index].add_approaching_vehicle(vehicle)
-            vehicle.add_approaching_light(self.traffic_lights[index])
+
+    def should_stop(self, vehicle):
+        return self._stop_due_to_light(vehicle) or self._stop_due_to_vehicle_ahead(vehicle)
+
+    def _stop_due_to_light(self, vehicle):
+        for light in self.traffic_lights:
+            if vehicle not in light.approaching_vehicles:
+                continue
+
+            light_pos = np.array(light.position, dtype=float)
+            vehicle_pos = np.array(vehicle.position, dtype=float)
+            dist = np.linalg.norm(light_pos - vehicle_pos)
+
+            if dist > 40:
+                continue
+
+            state = light.get_state()
+            dx, dy = vehicle.direction
+
+            if state == LightState.YELLOW:
+                return True
+            if abs(dx) > abs(dy) and state == LightState.RED:
+                return True
+            if abs(dy) > abs(dx) and state == LightState.GREEN:
+                return True
+
+        return False
+    
+    def _stop_due_to_vehicle_ahead(self, vehicle):
+        for other in self.vehicles:
+            if other is vehicle:
+                continue
+
+            if not np.array_equal(vehicle.direction, other.direction):
+                continue
+
+            # Same horizontal or vertical lane
+            if abs(vehicle.direction[0]) > 0:
+                same_lane = abs(vehicle.position[1] - other.position[1]) < 1
+            else:
+                same_lane = abs(vehicle.position[0] - other.position[0]) < 1
+
+            if not same_lane:
+                continue
+
+            # Is the other vehicle ahead?
+            delta = other.position - vehicle.position
+            if np.dot(delta, vehicle.direction) <= 0:
+                continue
+
+            if np.linalg.norm(delta) < 13:
+                return True
+
+        return False

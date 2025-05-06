@@ -10,7 +10,6 @@ class Vehicle:
         self.position = np.array(position, dtype=float)
         self.direction = np.array(direction, dtype=float)
         self.speed = speed
-        self.approaching_light = None
 
     def update(self, dt):
         self.position += self.direction * self.speed * dt
@@ -27,6 +26,3 @@ class Vehicle:
 
     def draw(self, screen):
         pygame.draw.rect(screen, VEHICLE_COLOR, self.rect())
-
-    def update_approaching_light(self, light):
-        self.approaching_light = light
