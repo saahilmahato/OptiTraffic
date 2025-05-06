@@ -12,17 +12,20 @@ class World:
         self.traffic_lights = self._create_traffic_lights()
         self.traffic_light_controller = TrafficLightController(self.traffic_lights, config)
 
-
     def draw(self, screen, dt):
         self.clear_traffic_data()
         self.add_traffic_data()
         self.traffic_light_controller.update(dt)
 
+        # Update and draw vehicles while filtering out those that are out of bounds
+        self.vehicles = [vehicle for vehicle in self.vehicles if self.is_within_bounds(vehicle)]
+        
         for vehicle in self.vehicles:
             if not self.should_stop(vehicle):
                 vehicle.update(dt)
             vehicle.draw(screen)
 
+        # Draw traffic lights
         for light in self.traffic_lights:
             light.draw(screen)
 
@@ -131,3 +134,21 @@ class World:
                 return True
 
         return False
+    
+    def is_within_bounds(self, vehicle):
+        x, y = vehicle.position
+        screen_width, screen_height = self.config["windowSize"], self.config["windowSize"]
+
+        # Check if the vehicle is within the visible window based on its direction
+        if abs(vehicle.direction[0]) > abs(vehicle.direction[1]):  # Horizontal movement
+            if vehicle.direction[0] > 0:  # Moving right
+                return x < screen_width
+            elif vehicle.direction[0] < 0:  # Moving left
+                return x > 0
+        else:  # Vertical movement
+            if vehicle.direction[1] > 0:  # Moving down
+                return y < screen_height
+            elif vehicle.direction[1] < 0:  # Moving up
+                return y > 0
+
+        return True  # If vehicle is stationary, it's always within bounds
