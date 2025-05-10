@@ -1,4 +1,6 @@
-windowSize: 900
+windowSize:
+  width: 900
+  height: 900
 
 fps: 60
 
@@ -14,7 +16,7 @@ lights:
     - [600, 600]
 
 spawn:
-  interval: 1
+  interval: 1.0
   points:
     - pos: [0, 280]
       direction: [1, 0]
