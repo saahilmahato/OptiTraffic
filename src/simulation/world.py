@@ -102,7 +102,7 @@ class World:
 
     def _stop_due_to_light(self, vehicle):
         for light in self.traffic_lights:
-            if vehicle not in light.approaching_vehicles:
+            if vehicle not in light.all_approaching_vehicles:
                 continue
 
             light_pos = np.array(light.position, dtype=float)
