@@ -5,6 +5,7 @@ VEHICLE_COLOR = (0, 0, 255)
 VEHICLE_LENGTH = 10
 VEHICLE_WIDTH = 5
 
+
 class Vehicle:
     def __init__(self, position, direction, speed=100):
         self.position = np.array(position, dtype=float)
@@ -22,7 +23,7 @@ class Vehicle:
         else:
             w, h = VEHICLE_WIDTH, VEHICLE_LENGTH
 
-        return pygame.Rect(x - w/2, y - h/2, w, h)
+        return pygame.Rect(x - w / 2, y - h / 2, w, h)
 
     def draw(self, screen):
         pygame.draw.rect(screen, VEHICLE_COLOR, self.rect())

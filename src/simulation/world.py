@@ -10,16 +10,30 @@ class World:
         self.vehicles = []
 
         self.traffic_lights = self._create_traffic_lights()
-        self.traffic_light_controller = TrafficLightController(self.traffic_lights, config)
+        self.traffic_light_controller = TrafficLightController(
+            self.traffic_lights, config
+        )
+
+        self.total_vehicles_passed = 0
 
     def draw(self, screen, dt):
         self.clear_traffic_data()
         self.add_traffic_data()
         self.traffic_light_controller.update(dt)
 
-        # Update and draw vehicles while filtering out those that are out of bounds
-        self.vehicles = [vehicle for vehicle in self.vehicles if self.is_within_bounds(vehicle)]
-        
+        # Track how many vehicles are before filtering
+        before_count = len(self.vehicles)
+
+        # Filter vehicles that are within bounds
+        self.vehicles = [
+            vehicle for vehicle in self.vehicles if self.is_within_bounds(vehicle)
+        ]
+
+        # Update total vehicles passed
+        passed_count = before_count - len(self.vehicles)
+        self.total_vehicles_passed += passed_count
+
+        # Update and draw remaining vehicles
         for vehicle in self.vehicles:
             if not self.should_stop(vehicle):
                 vehicle.update(dt)
@@ -36,11 +50,11 @@ class World:
             light_id = f"L{x}-{y}"
             lights.append(TrafficLight(position=(int(x), int(y)), light_id=light_id))
         return lights
-    
+
     def clear_traffic_data(self):
         for light in self.traffic_lights:
             light.clear_approaching_vehicles()
-            
+
     def add_traffic_data(self):
         for vehicle in self.vehicles:
             for i in range(len(self.traffic_lights)):
@@ -55,26 +69,26 @@ class World:
                 (1, 0): lambda: y == 280 and 0 <= x <= 300,
                 (-1, 0): lambda: y == 320 and 300 <= x <= 600,
                 (0, 1): lambda: x == 320 and 0 <= y <= 300,
-                (0, -1): lambda: x == 280 and 300 <= y <= 600
+                (0, -1): lambda: x == 280 and 300 <= y <= 600,
             },
             {
                 (1, 0): lambda: y == 280 and 300 <= x <= 600,
                 (-1, 0): lambda: y == 320 and 600 <= x <= 900,
                 (0, 1): lambda: x == 620 and 0 <= y <= 300,
-                (0, -1): lambda: x == 580 and 300 <= y <= 600
+                (0, -1): lambda: x == 580 and 300 <= y <= 600,
             },
             {
                 (1, 0): lambda: y == 580 and 0 <= x <= 300,
                 (-1, 0): lambda: y == 620 and 300 <= x <= 600,
                 (0, 1): lambda: x == 320 and 300 <= y <= 600,
-                (0, -1): lambda: x == 280 and 600 <= y <= 900
+                (0, -1): lambda: x == 280 and 600 <= y <= 900,
             },
             {
                 (1, 0): lambda: y == 580 and 300 <= x <= 600,
                 (-1, 0): lambda: y == 620 and 600 <= x <= 900,
                 (0, 1): lambda: x == 620 and 300 <= y <= 600,
-                (0, -1): lambda: x == 580 and 600 <= y <= 900
-            }
+                (0, -1): lambda: x == 580 and 600 <= y <= 900,
+            },
         ]
 
         conditions = traffic_conditions[index]
@@ -82,7 +96,9 @@ class World:
             self.traffic_lights[index].add_approaching_vehicle(vehicle)
 
     def should_stop(self, vehicle):
-        return self._stop_due_to_light(vehicle) or self._stop_due_to_vehicle_ahead(vehicle)
+        return self._stop_due_to_light(vehicle) or self._stop_due_to_vehicle_ahead(
+            vehicle
+        )
 
     def _stop_due_to_light(self, vehicle):
         for light in self.traffic_lights:
@@ -107,7 +123,7 @@ class World:
                 return True
 
         return False
-    
+
     def _stop_due_to_vehicle_ahead(self, vehicle):
         for other in self.vehicles:
             if other is vehicle:
@@ -134,10 +150,13 @@ class World:
                 return True
 
         return False
-    
+
     def is_within_bounds(self, vehicle):
         x, y = vehicle.position
-        screen_width, screen_height = self.config["windowSize"], self.config["windowSize"]
+        screen_width, screen_height = (
+            self.config["windowSize"],
+            self.config["windowSize"],
+        )
 
         # Check if the vehicle is within the visible window based on its direction
         if abs(vehicle.direction[0]) > abs(vehicle.direction[1]):  # Horizontal movement

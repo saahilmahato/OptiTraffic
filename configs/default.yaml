@@ -3,6 +3,7 @@ windowSize: 900
 fps: 60
 
 lights:
+  controllerType: fixed
   greenTime: 5
   yellowTime: 2
   redTime: 5
@@ -13,7 +14,7 @@ lights:
     - [600, 600]
 
 spawn:
-  interval: 0.5
+  interval: 1
   points:
     - pos: [0, 280]
       direction: [1, 0]

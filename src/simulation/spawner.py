@@ -1,6 +1,7 @@
 import random
 from src.simulation.vehicle import Vehicle
 
+
 class Spawner:
     def __init__(self, config, world):
         self.spawn_points = config.get("spawn", {}).get("points", [])
