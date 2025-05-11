@@ -3,6 +3,7 @@ import pygame
 import os
 import json
 import time
+import argparse
 
 from src.utils.config import load_config
 from src.simulation.world import World
@@ -11,18 +12,13 @@ from src.rendering.renderer import Renderer
 
 
 def initialize(
-    config_path: str,
+    config_path: str, controller_type: str
 ) -> tuple[pygame.Surface, pygame.time.Clock, dict, World, Spawner, Renderer]:
-    """
-    Initialize the simulation environment, including Pygame, world, and renderer.
-
-    Args:
-        config_path (str): Path to the YAML config file.
-
-    Returns:
-        Tuple containing the screen, clock, config, world, spawner, and renderer.
-    """
     config = load_config(config_path)
+
+    # Override controllerType if provided
+    if controller_type:
+        config["lights"]["controllerType"] = controller_type
 
     if "windowSize" not in config or not isinstance(config["windowSize"], dict):
         raise ValueError("Invalid config format: missing or malformed 'windowSize'")
@@ -42,15 +38,6 @@ def initialize(
 
 
 def handle_events(paused: bool) -> bool:
-    """
-    Handle Pygame events and toggle pause if space is pressed.
-
-    Args:
-        paused (bool): Current paused state.
-
-    Returns:
-        bool: Updated paused state.
-    """
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -61,10 +48,6 @@ def handle_events(paused: bool) -> bool:
 
 
 def record_traffic_data(controller_type: str, passed: int, wait_time: float):
-    """
-    Append final simulation metrics to a JSON file in results/.
-    Creates the file if it does not exist.
-    """
     os.makedirs("results", exist_ok=True)
     file_path = os.path.join("results", f"{controller_type}.json")
 
@@ -86,19 +69,17 @@ def record_traffic_data(controller_type: str, passed: int, wait_time: float):
         json.dump(data, f, indent=2)
 
 
-def run_simulation():
-    """
-    Main simulation loop. Runs for a fixed duration from config["simTime"] (in minutes),
-    then records aggregated data.
-    """
-    screen, clock, config, world, spawner, renderer = initialize("configs/default.yaml")
+def run_simulation(controller_type: str):
+    screen, clock, config, world, spawner, renderer = initialize(
+        "configs/default.yaml", controller_type
+    )
     fps = config.get("fps", 60)
     sim_minutes = config.get("simTime", 1)
     total_duration = sim_minutes * 60.0  # seconds
 
     paused = False
     elapsed = 0.0
-    controller_type = config.get("lights", {}).get("controllerType", "default")
+    controller_type = config.get("lights", {}).get("controllerType", "fixed")
 
     while elapsed < total_duration:
         dt = clock.tick(fps) / 1000.0
@@ -123,4 +104,14 @@ def run_simulation():
 
 
 if __name__ == "__main__":
-    run_simulation()
+    parser = argparse.ArgumentParser(
+        description="Run traffic simulation with optional controllerType override."
+    )
+    parser.add_argument(
+        "--controllerType",
+        type=str,
+        help="Override the controllerType from config file.",
+    )
+    args = parser.parse_args()
+
+    run_simulation(controller_type=args.controllerType)
