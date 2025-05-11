@@ -37,6 +37,13 @@ class Renderer:
         self._draw_horizontal_roads(width)
         self._draw_vehicles()
         self._draw_traffic_lights()
+        self.draw_vehicle_count()
+
+    def draw_vehicle_count(self):
+        """Draws the total number of vehicles passed on the screen."""
+        count_text = f"Vehicles Passed: {self.world.total_vehicles_passed}"
+        text_surface = self.font.render(count_text, True, (0, 0, 0))  # Black text
+        self.screen.blit(text_surface, (10, 10))  # Top-left with padding
 
     def _draw_vehicles(self):
         """Draw all vehicles in the world."""
