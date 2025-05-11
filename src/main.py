@@ -59,7 +59,12 @@ def handle_events(paused: bool) -> bool:
             paused = not paused  # Toggle pause
     return paused
 
-def record_traffic_data(controller_type: str, passed: int):
+
+def record_traffic_data(controller_type: str, passed: int, wait_time: float):
+    """
+    Append final simulation metrics to a JSON file in results/.
+    Creates the file if it does not exist.
+    """
     os.makedirs("results", exist_ok=True)
     file_path = os.path.join("results", f"{controller_type}.json")
 
@@ -70,23 +75,34 @@ def record_traffic_data(controller_type: str, passed: int):
         data = []
 
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    data.append({"timestamp": timestamp, "vehicles_passed": passed})
+    record = {
+        "timestamp": timestamp,
+        "vehicles_passed": passed,
+        "wait_time": round(wait_time, 2),
+    }
+    data.append(record)
 
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
 
+
 def run_simulation():
     """
-    Main simulation loop.
+    Main simulation loop. Runs for a fixed duration from config["simTime"] (in minutes),
+    then records aggregated data.
     """
     screen, clock, config, world, spawner, renderer = initialize("configs/default.yaml")
-    fps = config["fps"]
-    paused = False
-    time_accumulator = 0.0
-    controller_type = config.get("lights", {}).get("controllerType", "fixed")
+    fps = config.get("fps", 60)
+    sim_minutes = config.get("simTime", 1)
+    total_duration = sim_minutes * 60.0  # seconds
 
-    while True:
+    paused = False
+    elapsed = 0.0
+    controller_type = config.get("lights", {}).get("controllerType", "default")
+
+    while elapsed < total_duration:
         dt = clock.tick(fps) / 1000.0
+        elapsed += dt
         paused = handle_events(paused)
 
         if not paused:
@@ -94,15 +110,16 @@ def run_simulation():
             spawner.spawn(dt)
             world.draw(screen, dt)
 
-            time_accumulator += dt
-            if time_accumulator >= 60.0:
-                passed = world.total_vehicles_passed
-                record_traffic_data(controller_type, passed)
-                world.total_vehicles_passed = 0
-                time_accumulator = 0.0
-
-
         pygame.display.flip()
+
+    passed = world.total_vehicles_passed
+    wait_time = world.total_wait_time
+    record_traffic_data(controller_type, passed, wait_time)
+
+    pygame.quit()
+    print(
+        f"Simulation completed: {sim_minutes} min; passed={passed}, total_wait_time={wait_time:.2f}s"
+    )
 
 
 if __name__ == "__main__":

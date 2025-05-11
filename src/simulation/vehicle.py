@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-from typing import Tuple
+from typing import Tuple, Optional
 
 VEHICLE_COLOR = (0, 0, 255)
 VEHICLE_LENGTH = 10
@@ -29,6 +29,8 @@ class Vehicle:
         self.direction = np.array(direction, dtype=float)
         self.moving = True
         self.distance_to_light = 300
+        self.wait_time: float = 0.0
+        self.stop_start_time: Optional[float] = None
 
     def update(self, speed: float, dt: float) -> None:
         """
@@ -94,6 +96,13 @@ class Vehicle:
             bool: True if the vehicle is moving else False
         """
         return self.moving
-    
-    def update_light_distance(self, distance) -> None:
+
+    def update_light_distance(self, distance: float) -> None:
+        """
+        Updates the distance of the vehicle to its approaching light.
+            
+        Args:
+            distance (float): The Euclidean distance between the vehicle and light
+
+        """
         self.distance_to_light = distance

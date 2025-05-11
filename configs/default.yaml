@@ -4,6 +4,8 @@ windowSize:
 
 fps: 60
 
+simTime: 10
+
 lights:
   controllerType: fixed
   greenTime: 5

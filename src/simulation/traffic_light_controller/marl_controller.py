@@ -5,11 +5,16 @@ import random
 from collections import deque, namedtuple
 from typing import List, Any
 from src.simulation.traffic_light import LightState
-from src.simulation.traffic_light_controller.base_controller import BaseTrafficLightController
+from src.simulation.traffic_light_controller.base_controller import (
+    BaseTrafficLightController,
+)
 
 # Transition tuple for replay
 global Transition
-Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
+Transition = namedtuple(
+    "Transition", ("state", "action", "reward", "next_state", "done")
+)
+
 
 class DQNAgent:
     def __init__(self, input_dim: int, lr: float = 1e-3, gamma: float = 0.99):
@@ -19,7 +24,7 @@ class DQNAgent:
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64, len(LightState))
+            nn.Linear(64, len(LightState)),
         )
         # target network copy
         self.target_net = nn.Sequential(*[layer for layer in self.net])
@@ -64,6 +69,7 @@ class DQNAgent:
         self.epsilon = max(self.eps_min, self.epsilon - self.eps_decay)
         return loss.item()
 
+
 class MARLTrafficLightController(BaseTrafficLightController):
     def __init__(self, traffic_lights: List[Any], config: dict):
         self.traffic_lights = traffic_lights
@@ -82,11 +88,12 @@ class MARLTrafficLightController(BaseTrafficLightController):
 
     def _init_logger(self):
         import logging
-        logger = logging.getLogger('MARLController')
+
+        logger = logging.getLogger("MARLController")
         if not logger.handlers:
             logger.setLevel(logging.INFO)
             ch = logging.StreamHandler()
-            fmt = logging.Formatter('%(asctime)s %(message)s')
+            fmt = logging.Formatter("%(asctime)s %(message)s")
             ch.setFormatter(fmt)
             logger.addHandler(ch)
         return logger
@@ -96,12 +103,20 @@ class MARLTrafficLightController(BaseTrafficLightController):
         global_states: List[float] = []
         for light in self.traffic_lights:
             lx, ly = light.position
-            counts = [len(light.approaching[d]) for d in ['N','S','E','W']]
-            dists  = [sum(v.distance_to_light for v in light.approaching[d]) / max(1,len(light.approaching[d])) for d in ['N','S','E','W']]
-            moving = [sum(1 for v in light.approaching[d] if v.get_state()) / max(1,len(light.approaching[d])) for d in ['N','S','E','W']]
+            counts = [len(light.approaching[d]) for d in ["N", "S", "E", "W"]]
+            dists = [
+                sum(v.distance_to_light for v in light.approaching[d])
+                / max(1, len(light.approaching[d]))
+                for d in ["N", "S", "E", "W"]
+            ]
+            moving = [
+                sum(1 for v in light.approaching[d] if v.get_state())
+                / max(1, len(light.approaching[d]))
+                for d in ["N", "S", "E", "W"]
+            ]
             # spatial features: avg relative x and y offsets per direction
             spatial = []
-            for d in ['N','S','E','W']:
+            for d in ["N", "S", "E", "W"]:
                 dir_list = light.approaching[d]
                 if dir_list:
                     avg_dx = sum(v.position[0] - lx for v in dir_list) / len(dir_list)
@@ -136,14 +151,26 @@ class MARLTrafficLightController(BaseTrafficLightController):
                 self.time_in_state[idx] = 0.0
 
             # reward: moved vehicles minus queue penalty and stopped penalty
-            moved = sum(1 for d, dir_list in light.approaching.items()
-                        for v in dir_list
-                        if ((new_state_enum == LightState.GREEN and d in ['E','W']) or
-                            (new_state_enum == LightState.RED   and d in ['N','S']))
-                        and v.get_state())
-            queue_penalty = 0.1 * sum(len(light.approaching[d]) for d in ['N','S','E','W'])
+            moved = sum(
+                1
+                for d, dir_list in light.approaching.items()
+                for v in dir_list
+                if (
+                    (new_state_enum == LightState.GREEN and d in ["E", "W"])
+                    or (new_state_enum == LightState.RED and d in ["N", "S"])
+                )
+                and v.get_state()
+            )
+            queue_penalty = 0.1 * sum(
+                len(light.approaching[d]) for d in ["N", "S", "E", "W"]
+            )
             # stopped vehicles penalty: heavier
-            stopped_count = sum(1 for d in ['N','S','E','W'] for v in light.approaching[d] if not v.get_state())
+            stopped_count = sum(
+                1
+                for d in ["N", "S", "E", "W"]
+                for v in light.approaching[d]
+                if not v.get_state()
+            )
             stopped_penalty = 0.2 * stopped_count
             reward = moved - queue_penalty - stopped_penalty
             done = False
@@ -155,8 +182,8 @@ class MARLTrafficLightController(BaseTrafficLightController):
 
             # log
             self.logger.info(
-                f"Agent {idx}: action={new_state_enum.name}, time={round(self.time_in_state[idx],2)}, "
-                f"moved={moved}, stopped={stopped_count}, reward={round(reward,2)}, loss={loss}"
+                f"Agent {idx}: action={new_state_enum.name}, time={round(self.time_in_state[idx], 2)}, "
+                f"moved={moved}, stopped={stopped_count}, reward={round(reward, 2)}, loss={loss}"
             )
 
         self.tick += 1

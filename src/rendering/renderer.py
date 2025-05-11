@@ -37,13 +37,18 @@ class Renderer:
         self._draw_horizontal_roads(width)
         self._draw_vehicles()
         self._draw_traffic_lights()
-        self.draw_vehicle_count()
+        self.draw_stats()
 
-    def draw_vehicle_count(self):
+    def draw_stats(self):
         """Draws the total number of vehicles passed on the screen."""
         count_text = f"Vehicles Passed: {self.world.total_vehicles_passed}"
-        text_surface = self.font.render(count_text, True, (0, 0, 0))  # Black text
-        self.screen.blit(text_surface, (10, 10))  # Top-left with padding
+        wait_time_text = f"Wait Time: {self.world.total_wait_time:.2f}"
+        count_text_surface = self.font.render(count_text, True, (0, 0, 0))  # Black text
+        wait_time_text_surface = self.font.render(
+            wait_time_text, True, (0, 0, 0)
+        )  # Black text
+        self.screen.blit(count_text_surface, (10, 10))  # Top-left with padding
+        self.screen.blit(wait_time_text_surface, (10, 30))  # Top-left with padding
 
     def _draw_vehicles(self):
         """Draw all vehicles in the world."""

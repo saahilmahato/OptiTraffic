@@ -19,6 +19,8 @@ class World:
         self.config = config
         self.vehicles = []
         self.total_vehicles_passed = 0
+        self.total_wait_time = 0.0
+        self.sim_time = 0.0
 
         self.traffic_lights = self._create_traffic_lights()
         self.traffic_light_controller = TrafficLightController(
@@ -44,27 +46,69 @@ class World:
         for light in self.traffic_lights:
             light.draw(screen)
 
-    def update_traffic_data(self, dt):
-        """
-        Updates the simulation state for vehicles and traffic lights.
+    def update_traffic_data(self, dt: float) -> None:
+        """Master update loop split into distinct phases."""
+        self._advance_clock(dt)
+        self._gather_traffic_data()
+        self._update_traffic_lights(dt)
+        self._process_departures()
+        self._step_vehicles(dt)
 
-        Parameters:
-            dt (float): Delta time since the last update.
-        """
+    def _advance_clock(self, dt: float) -> None:
+        """Increment global simulation time."""
+        self.sim_time += dt
+
+    def _gather_traffic_data(self) -> None:
+        """Clear and rebuild any per-tick traffic data buckets."""
         self.clear_traffic_data()
         self.add_traffic_data()
+
+    def _update_traffic_lights(self, dt: float) -> None:
+        """Advance the traffic light controller by dt seconds."""
         self.traffic_light_controller.update(dt)
 
-        before_count = len(self.vehicles)
-        # Vectorized filtering of vehicles within bounds using numpy
-        self.vehicles = [
-            vehicle for vehicle in self.vehicles if self.is_within_bounds(vehicle)
-        ]
-        self.total_vehicles_passed += before_count - len(self.vehicles)
+    def _process_departures(self) -> None:
+        """
+        Handle vehicles that have left the simulation bounds:
+        - Count them as passed
+        - Finalize and accumulate their wait_time
+        - Remove them from the world's vehicle list
+        """
+        departed = [v for v in self.vehicles if not self.is_within_bounds(v)]
+        self.total_vehicles_passed += len(departed)
 
-        for vehicle in self.vehicles:
-            speed = 0 if self.should_stop(vehicle) else 100
-            vehicle.update(speed, dt)
+        for v in departed:
+            if v.stop_start_time is not None:
+                # finalize the last waiting period
+                v.wait_time = self.sim_time - v.stop_start_time
+                v.stop_start_time = None
+            self.total_wait_time += v.wait_time
+
+        # keep only in-bounds vehicles
+        self.vehicles = [v for v in self.vehicles if self.is_within_bounds(v)]
+
+    def _step_vehicles(self, dt: float) -> None:
+        """
+        For each in-bounds vehicle:
+        - Update its wait_time and stop_start_time based on should_stop()
+        - Call its update() to move it
+        """
+        for v in self.vehicles:
+            if self.should_stop(v):
+                # just started waiting?
+                if v.stop_start_time is None:
+                    v.stop_start_time = self.sim_time
+                # continuously update wait_time
+                v.wait_time = self.sim_time - v.stop_start_time
+                speed = 0.0
+            else:
+                # just resumed moving?
+                if v.stop_start_time is not None:
+                    v.wait_time = self.sim_time - v.stop_start_time
+                    v.stop_start_time = None
+                speed = 100.0
+
+            v.update(speed, dt)
 
     def _create_traffic_lights(self):
         """
@@ -113,7 +157,11 @@ class World:
             condition_fn = traffic_conditions[(dx, dy)]
             if condition_fn(index, vehicle):
                 self.traffic_lights[index].add_approaching_vehicle(vehicle)
-                vehicle.update_light_distance(np.linalg.norm(vehicle.position - self.traffic_lights[index].position))
+                vehicle.update_light_distance(
+                    np.linalg.norm(
+                        vehicle.position - self.traffic_lights[index].position
+                    )
+                )
 
     def _check_east_bound_traffic(self, index, vehicle):
         """
