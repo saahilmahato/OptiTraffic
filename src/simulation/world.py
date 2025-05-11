@@ -1,7 +1,9 @@
 import numpy as np
 
 from src.simulation.traffic_light import TrafficLight, LightState
-from src.simulation.traffic_light_controller import TrafficLightController
+from src.simulation.traffic_light_controller.traffic_light_controller import (
+    TrafficLightController,
+)
 
 
 class World:
