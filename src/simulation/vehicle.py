@@ -100,7 +100,7 @@ class Vehicle:
     def update_light_distance(self, distance: float) -> None:
         """
         Updates the distance of the vehicle to its approaching light.
-            
+
         Args:
             distance (float): The Euclidean distance between the vehicle and light
 

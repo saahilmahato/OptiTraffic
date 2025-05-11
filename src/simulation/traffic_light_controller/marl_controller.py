@@ -115,12 +115,22 @@ class MARLTrafficLightController(BaseTrafficLightController):
             global_states += counts + dists + moving + spatial
         return global_states
 
-    def _compute_spatial_features(self, lx: float, ly: float, light: Any) -> List[float]:
+    def _compute_spatial_features(
+        self, lx: float, ly: float, light: Any
+    ) -> List[float]:
         spatial = []
         for d in ["N", "S", "E", "W"]:
             dir_list = light.approaching[d]
-            avg_dx = sum(v.position[0] - lx for v in dir_list) / len(dir_list) if dir_list else 0.0
-            avg_dy = sum(v.position[1] - ly for v in dir_list) / len(dir_list) if dir_list else 0.0
+            avg_dx = (
+                sum(v.position[0] - lx for v in dir_list) / len(dir_list)
+                if dir_list
+                else 0.0
+            )
+            avg_dy = (
+                sum(v.position[1] - ly for v in dir_list) / len(dir_list)
+                if dir_list
+                else 0.0
+            )
             spatial += [avg_dx, avg_dy]
         return spatial
 
@@ -149,9 +159,14 @@ class MARLTrafficLightController(BaseTrafficLightController):
             )
             and v.get_state()
         )
-        queue_penalty = 0.1 * sum(len(light.approaching[d]) for d in ["N", "S", "E", "W"])
+        queue_penalty = 0.1 * sum(
+            len(light.approaching[d]) for d in ["N", "S", "E", "W"]
+        )
         stopped_count = sum(
-            1 for d in ["N", "S", "E", "W"] for v in light.approaching[d] if not v.get_state()
+            1
+            for d in ["N", "S", "E", "W"]
+            for v in light.approaching[d]
+            if not v.get_state()
         )
         stopped_penalty = 0.2 * stopped_count
         return moved - queue_penalty - stopped_penalty
