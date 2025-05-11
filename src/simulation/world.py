@@ -63,8 +63,8 @@ class World:
         self.total_vehicles_passed += before_count - len(self.vehicles)
 
         for vehicle in self.vehicles:
-            if not self.should_stop(vehicle):
-                vehicle.update(dt)
+            speed = 0 if self.should_stop(vehicle) else 100
+            vehicle.update(speed, dt)
 
     def _create_traffic_lights(self):
         """
@@ -113,6 +113,7 @@ class World:
             condition_fn = traffic_conditions[(dx, dy)]
             if condition_fn(index, vehicle):
                 self.traffic_lights[index].add_approaching_vehicle(vehicle)
+                vehicle.update_light_distance(np.linalg.norm(vehicle.position - self.traffic_lights[index].position))
 
     def _check_east_bound_traffic(self, index, vehicle):
         """

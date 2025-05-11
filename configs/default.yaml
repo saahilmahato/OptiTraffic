@@ -16,7 +16,7 @@ lights:
     - [600, 600]
 
 spawn:
-  interval: 1.0
+  interval: 0.5
   points:
     - pos: [0, 280]
       direction: [1, 0]

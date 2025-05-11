@@ -17,7 +17,6 @@ class Vehicle:
         self,
         position: Tuple[float, float],
         direction: Tuple[float, float],
-        speed: float = 100,
     ) -> None:
         """
         Initialize a vehicle with position, direction, and speed.
@@ -25,20 +24,22 @@ class Vehicle:
         Args:
             position (tuple): (x, y) position.
             direction (tuple): Normalized direction vector (dx, dy).
-            speed (float): Movement speed (units per second).
         """
         self.position = np.array(position, dtype=float)
         self.direction = np.array(direction, dtype=float)
-        self.speed = speed
+        self.moving = True
+        self.distance_to_light = 300
 
-    def update(self, dt: float) -> None:
+    def update(self, speed: float, dt: float) -> None:
         """
         Update vehicle position based on time delta.
 
         Args:
+            speed(float): Speed of the vehicle
             dt (float): Time delta in seconds.
         """
-        self.position += self.direction * self.speed * dt
+        self.moving = speed > 0
+        self.position += self.direction * speed * dt
 
     def rect(self) -> pygame.Rect:
         """
@@ -85,13 +86,14 @@ class Vehicle:
                 return "N"
         return ""
 
-    def get_state(self) -> str:
+    def get_state(self) -> bool:
         """
         Get vehicle movement state.
 
         Returns:
-            str: 'moving' if speed is non-zero, 'stopped' otherwise.
+            bool: True if the vehicle is moving else False
         """
-        if np.linalg.norm(self.direction * self.speed) < 1e-2:
-            return "stopped"
-        return "moving"
+        return self.moving
+    
+    def update_light_distance(self, distance) -> None:
+        self.distance_to_light = distance

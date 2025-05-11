@@ -5,6 +5,7 @@ from src.simulation.traffic_light_controller.base_controller import (
 from src.simulation.traffic_light_controller.fixed_controller import (
     FixedCycleTrafficLightController,
 )
+from src.simulation.traffic_light_controller.marl_controller import MARLTrafficLightController
 
 
 class TrafficLightController:
@@ -42,6 +43,9 @@ class TrafficLightController:
 
         if controller_type == "fixed":
             return FixedCycleTrafficLightController(traffic_lights, config)
+        
+        if controller_type == "marl":
+            return  MARLTrafficLightController(traffic_lights, config)
 
         raise ValueError(f"Unknown traffic light controller type: '{controller_type}'")
 
