@@ -74,10 +74,8 @@ class MARLTrafficLightController(BaseTrafficLightController):
     def __init__(self, traffic_lights: List[Any], config: dict):
         self.traffic_lights = traffic_lights
         self.n_agents = len(traffic_lights)
-        # each agent obs: counts(4)+distances(4)+moving(4)+spatial(4*2)=20; global state dim
-        obs_dim = self.n_agents * 20
+        obs_dim = self.n_agents * 20  # Global state dimension
         self.agents = [DQNAgent(input_dim=obs_dim) for _ in traffic_lights]
-        # timing constraints per agent
         self.time_in_state = [0.0] * self.n_agents
         self.prev_action = [0] * self.n_agents
         self.min_dur = 1.0
@@ -98,9 +96,8 @@ class MARLTrafficLightController(BaseTrafficLightController):
             logger.addHandler(ch)
         return logger
 
-    def update(self, dt: float) -> None:
-        # build global state concatenation
-        global_states: List[float] = []
+    def _build_global_state(self) -> List[float]:
+        global_states = []
         for light in self.traffic_lights:
             lx, ly = light.position
             counts = [len(light.approaching[d]) for d in ["N", "S", "E", "W"]]
@@ -114,76 +111,81 @@ class MARLTrafficLightController(BaseTrafficLightController):
                 / max(1, len(light.approaching[d]))
                 for d in ["N", "S", "E", "W"]
             ]
-            # spatial features: avg relative x and y offsets per direction
-            spatial = []
-            for d in ["N", "S", "E", "W"]:
-                dir_list = light.approaching[d]
-                if dir_list:
-                    avg_dx = sum(v.position[0] - lx for v in dir_list) / len(dir_list)
-                    avg_dy = sum(v.position[1] - ly for v in dir_list) / len(dir_list)
-                else:
-                    avg_dx = avg_dy = 0.0
-                spatial += [avg_dx, avg_dy]
+            spatial = self._compute_spatial_features(lx, ly, light)
             global_states += counts + dists + moving + spatial
+        return global_states
+
+    def _compute_spatial_features(self, lx: float, ly: float, light: Any) -> List[float]:
+        spatial = []
+        for d in ["N", "S", "E", "W"]:
+            dir_list = light.approaching[d]
+            avg_dx = sum(v.position[0] - lx for v in dir_list) / len(dir_list) if dir_list else 0.0
+            avg_dy = sum(v.position[1] - ly for v in dir_list) / len(dir_list) if dir_list else 0.0
+            spatial += [avg_dx, avg_dy]
+        return spatial
+
+    def _select_traffic_light_action(self, idx: int, state: List[float]) -> int:
+        proposed = self.agents[idx].select_action(state)
+        time_in_state = self.time_in_state[idx]
+        if time_in_state < self.min_dur:
+            return self.prev_action[idx]
+        elif time_in_state >= self.max_dur:
+            return self._force_action_change(idx, state)
+        return proposed
+
+    def _force_action_change(self, idx: int, state: List[float]) -> int:
+        q_vals = self.agents[idx].net(torch.FloatTensor(state))
+        sorted_actions = torch.argsort(q_vals, descending=True).tolist()
+        return next(a for a in sorted_actions if a != self.prev_action[idx])
+
+    def _calculate_reward(self, light: Any, new_state_enum: LightState) -> float:
+        moved = sum(
+            1
+            for d, dir_list in light.approaching.items()
+            for v in dir_list
+            if (
+                (new_state_enum == LightState.GREEN and d in ["E", "W"])
+                or (new_state_enum == LightState.RED and d in ["N", "S"])
+            )
+            and v.get_state()
+        )
+        queue_penalty = 0.1 * sum(len(light.approaching[d]) for d in ["N", "S", "E", "W"])
+        stopped_count = sum(
+            1 for d in ["N", "S", "E", "W"] for v in light.approaching[d] if not v.get_state()
+        )
+        stopped_penalty = 0.2 * stopped_count
+        return moved - queue_penalty - stopped_penalty
+
+    def update(self, dt: float) -> None:
+        global_states = self._build_global_state()
 
         for idx, light in enumerate(self.traffic_lights):
             self.time_in_state[idx] += dt
             state = global_states.copy()
 
-            # propose action
-            proposed = self.agents[idx].select_action(state)
-            # enforce min/max durations
-            if self.time_in_state[idx] < self.min_dur:
-                action = self.prev_action[idx]
-            elif self.time_in_state[idx] >= self.max_dur:
-                # force change to highest Q != prev
-                q_vals = self.agents[idx].net(torch.FloatTensor(state))
-                sorted_actions = torch.argsort(q_vals, descending=True).tolist()
-                action = next(a for a in sorted_actions if a != self.prev_action[idx])
-            else:
-                action = proposed
-
+            # Propose and enforce action
+            action = self._select_traffic_light_action(idx, state)
             new_state_enum = list(LightState)[action]
             light.update(new_state_enum)
 
+            # Reset time_in_state and prev_action if the action changes
             if action != self.prev_action[idx]:
                 self.prev_action[idx] = action
                 self.time_in_state[idx] = 0.0
 
-            # reward: moved vehicles minus queue penalty and stopped penalty
-            moved = sum(
-                1
-                for d, dir_list in light.approaching.items()
-                for v in dir_list
-                if (
-                    (new_state_enum == LightState.GREEN and d in ["E", "W"])
-                    or (new_state_enum == LightState.RED and d in ["N", "S"])
-                )
-                and v.get_state()
-            )
-            queue_penalty = 0.1 * sum(
-                len(light.approaching[d]) for d in ["N", "S", "E", "W"]
-            )
-            # stopped vehicles penalty: heavier
-            stopped_count = sum(
-                1
-                for d in ["N", "S", "E", "W"]
-                for v in light.approaching[d]
-                if not v.get_state()
-            )
-            stopped_penalty = 0.2 * stopped_count
-            reward = moved - queue_penalty - stopped_penalty
-            done = False
+            # Calculate reward
+            reward = self._calculate_reward(light, new_state_enum)
+            done = False  # Not used, but needed for compatibility
 
-            # learning
+            # Update agent and store transition
             next_state = state
             loss = self.agents[idx].update()
             self.agents[idx].store(state, action, reward, next_state, done)
 
-            # log
+            # Log information
             self.logger.info(
                 f"Agent {idx}: action={new_state_enum.name}, time={round(self.time_in_state[idx], 2)}, "
-                f"moved={moved}, stopped={stopped_count}, reward={round(reward, 2)}, loss={loss}"
+                f"moved={reward}, stopped={reward}, reward={round(reward, 2)}, loss={loss}"
             )
 
         self.tick += 1
