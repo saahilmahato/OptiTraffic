@@ -1,0 +1,102 @@
+[
+  {
+    "timestamp": "2025-05-11 23:23:03",
+    "vehicles_passed": 1146,
+    "wait_time": 5283.23
+  },
+  {
+    "timestamp": "2025-05-11 23:33:05",
+    "vehicles_passed": 1148,
+    "wait_time": 5193.31
+  },
+  {
+    "timestamp": "2025-05-11 23:43:06",
+    "vehicles_passed": 1146,
+    "wait_time": 5262.83
+  },
+  {
+    "timestamp": "2025-05-11 23:53:07",
+    "vehicles_passed": 1146,
+    "wait_time": 5081.75
+  },
+  {
+    "timestamp": "2025-05-12 00:03:08",
+    "vehicles_passed": 1144,
+    "wait_time": 5250.06
+  },
+  {
+    "timestamp": "2025-05-12 00:13:10",
+    "vehicles_passed": 1146,
+    "wait_time": 5327.18
+  },
+  {
+    "timestamp": "2025-05-12 00:23:11",
+    "vehicles_passed": 1146,
+    "wait_time": 5228.23
+  },
+  {
+    "timestamp": "2025-05-12 00:33:12",
+    "vehicles_passed": 1146,
+    "wait_time": 5347.56
+  },
+  {
+    "timestamp": "2025-05-12 00:43:13",
+    "vehicles_passed": 1146,
+    "wait_time": 5310.16
+  },
+  {
+    "timestamp": "2025-05-12 00:53:15",
+    "vehicles_passed": 1149,
+    "wait_time": 5249.45
+  },
+  {
+    "timestamp": "2025-05-12 01:03:16",
+    "vehicles_passed": 1148,
+    "wait_time": 5280.27
+  },
+  {
+    "timestamp": "2025-05-12 01:13:17",
+    "vehicles_passed": 1148,
+    "wait_time": 5382.48
+  },
+  {
+    "timestamp": "2025-05-12 01:23:19",
+    "vehicles_passed": 1145,
+    "wait_time": 5244.82
+  },
+  {
+    "timestamp": "2025-05-12 01:33:20",
+    "vehicles_passed": 1143,
+    "wait_time": 5227.23
+  },
+  {
+    "timestamp": "2025-05-12 01:43:21",
+    "vehicles_passed": 1147,
+    "wait_time": 5374.63
+  },
+  {
+    "timestamp": "2025-05-12 01:53:23",
+    "vehicles_passed": 1145,
+    "wait_time": 5370.44
+  },
+  {
+    "timestamp": "2025-05-12 02:03:24",
+    "vehicles_passed": 1146,
+    "wait_time": 5150.83
+  },
+  {
+    "timestamp": "2025-05-12 02:13:25",
+    "vehicles_passed": 1147,
+    "wait_time": 5364.79
+  },
+  {
+    "timestamp": "2025-05-12 02:23:26",
+    "vehicles_passed": 1149,
+    "wait_time": 5142.19
+  },
+  {
+    "timestamp": "2025-05-12 02:33:28",
+    "vehicles_passed": 1147,
+    "wait_time": 5205.03
+  }
+]
