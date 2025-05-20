@@ -116,28 +116,37 @@ def plot_boxplots(df_fixed: pd.DataFrame, df_marl: pd.DataFrame, out_dir: Path):
     df_fixed['method'] = 'Fixed'
     df_marl['method'] = 'MARL'
     df = pd.concat([df_fixed, df_marl], ignore_index=True)
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    fig, axes = plt.subplots(2, 1, figsize=(8, 10))  # 2 rows, 1 column
     for ax, metric in zip(axes, ['vehicles_passed', 'wait_time']):
         sns.boxplot(x='method', y=metric, data=df, ax=ax)
         ax.set_title(f"{metric.replace('_', ' ').title()} by Method")
+
     fig.tight_layout()
     fig.savefig(out_dir / 'boxplots.png')
     plt.close(fig)
 
 
+
 def plot_histograms(df_fixed: pd.DataFrame, df_marl: pd.DataFrame, out_dir: Path):
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    sns.histplot(df_fixed['vehicles_passed'], kde=True, ax=axes[0,0])
-    axes[0,0].set_title('Fixed - Vehicles Passed')
-    sns.histplot(df_marl['vehicles_passed'], kde=True, ax=axes[0,1])
-    axes[0,1].set_title('MARL - Vehicles Passed')
-    sns.histplot(df_fixed['wait_time'], kde=True, ax=axes[1,0])
-    axes[1,0].set_title('Fixed - Wait Time')
-    sns.histplot(df_marl['wait_time'], kde=True, ax=axes[1,1])
-    axes[1,1].set_title('MARL - Wait Time')
+    fig, axes = plt.subplots(4, 1, figsize=(8, 16))  # 4 rows, 1 column
+
+    sns.histplot(df_fixed['vehicles_passed'], kde=True, ax=axes[0])
+    axes[0].set_title('Fixed - Vehicles Passed')
+
+    sns.histplot(df_marl['vehicles_passed'], kde=True, ax=axes[1])
+    axes[1].set_title('MARL - Vehicles Passed')
+
+    sns.histplot(df_fixed['wait_time'], kde=True, ax=axes[2])
+    axes[2].set_title('Fixed - Wait Time')
+
+    sns.histplot(df_marl['wait_time'], kde=True, ax=axes[3])
+    axes[3].set_title('MARL - Wait Time')
+
     fig.tight_layout()
     fig.savefig(out_dir / 'histograms.png')
     plt.close(fig)
+
 
 # Generate PDF report
 def generate_pdf_report(summary: dict, out_dir: Path):
