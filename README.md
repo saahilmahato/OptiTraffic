@@ -17,7 +17,7 @@ For an in-depth analysis and results, refer to the research paper:
 ### Prerequisites
 
 * Python 3.8+
-* pip (Python package installer)([Python Packaging][1])
+* pip (Python package installer)
 
 ### Installation
 
@@ -35,7 +35,7 @@ For an in-depth analysis and results, refer to the research paper:
    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
    ```
 
-3. Install dependencies:([Curious Mints][2])
+3. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
