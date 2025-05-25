@@ -51,7 +51,13 @@ To execute the simulation:
 python3 -m src.main
 ```
 
+Optional parameter `controllerType`
+By default the script will use fixed controller.
+For MARL controller you can use:
 
+```bash
+python3 -m src.main --controllerType marl
+```
 
 This command initializes the simulation environment and begins the traffic signal control processes.
 
@@ -65,6 +71,7 @@ To run a series of simulations and record various results:
 ./run_simulations.sh
 ```
 
+This will run simulations 40 times. Each run will be for 10 minutes. The first 20 runs will be for fixed controller and the later 20 will be for MARL controller.
 
 
 Ensure the script has execute permissions:
