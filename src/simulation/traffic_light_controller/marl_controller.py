@@ -10,7 +10,6 @@ from src.simulation.traffic_light_controller.base_controller import (
 )
 
 # Transition tuple for replay
-global Transition
 Transition = namedtuple(
     "Transition", ("state", "action", "reward", "next_state", "done")
 )
@@ -18,16 +17,28 @@ Transition = namedtuple(
 
 class DQNAgent:
     def __init__(self, input_dim: int, lr: float = 1e-3, gamma: float = 0.99):
-        # Improved network: two hidden layers, more neurons
+        # Set device to GPU if available
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.device)
+
         self.net = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, len(LightState)),
-        )
-        # target network copy
-        self.target_net = nn.Sequential(*[layer for layer in self.net])
+        ).to(self.device)
+
+        # Target network copy
+        self.target_net = nn.Sequential(
+            nn.Linear(input_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, len(LightState)),
+        ).to(self.device)
+        self.target_net.load_state_dict(self.net.state_dict())
+
         self.optimizer = optim.Adam(self.net.parameters(), lr=lr, weight_decay=0)
         self.gamma = gamma
         self.epsilon = 1.0
@@ -40,7 +51,8 @@ class DQNAgent:
         if random.random() < self.epsilon:
             return random.randrange(len(LightState))
         with torch.no_grad():
-            q = self.net(torch.FloatTensor(state_vec))
+            state_tensor = torch.FloatTensor(state_vec).to(self.device)
+            q = self.net(state_tensor)
             return int(q.argmax().item())
 
     def store(self, *args: Any) -> None:
@@ -50,11 +62,11 @@ class DQNAgent:
         if len(self.memory) < self.batch_size:
             return None
         batch = random.sample(self.memory, self.batch_size)
-        states = torch.FloatTensor([t.state for t in batch])
-        actions = torch.LongTensor([t.action for t in batch]).unsqueeze(1)
-        rewards = torch.FloatTensor([t.reward for t in batch])
-        next_states = torch.FloatTensor([t.next_state for t in batch])
-        dones = torch.FloatTensor([t.done for t in batch])
+        states = torch.FloatTensor([t.state for t in batch]).to(self.device)
+        actions = torch.LongTensor([t.action for t in batch]).unsqueeze(1).to(self.device)
+        rewards = torch.FloatTensor([t.reward for t in batch]).to(self.device)
+        next_states = torch.FloatTensor([t.next_state for t in batch]).to(self.device)
+        dones = torch.FloatTensor([t.done for t in batch]).to(self.device)
 
         q_values = self.net(states).gather(1, actions).squeeze()
         next_q = self.target_net(next_states).max(1)[0]
@@ -144,7 +156,8 @@ class MARLTrafficLightController(BaseTrafficLightController):
         return proposed
 
     def _force_action_change(self, idx: int, state: List[float]) -> int:
-        q_vals = self.agents[idx].net(torch.FloatTensor(state))
+        state_tensor = torch.FloatTensor(state).to(self.agents[idx].device)
+        q_vals = self.agents[idx].net(state_tensor)
         sorted_actions = torch.argsort(q_vals, descending=True).tolist()
         return next(a for a in sorted_actions if a != self.prev_action[idx])
 
