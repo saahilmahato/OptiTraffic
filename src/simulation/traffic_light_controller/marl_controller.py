@@ -185,37 +185,64 @@ class MARLTrafficLightController(BaseTrafficLightController):
         return moved - queue_penalty - stopped_penalty
 
     def update(self, dt: float) -> None:
-        global_states = self._build_global_state()
+        # Get current global state BEFORE any actions
+        current_global_state = self._build_global_state()
 
+        # Collect actions for all agents
+        actions = []
+        states_for_agents = []
+        
         for idx, light in enumerate(self.traffic_lights):
             self.time_in_state[idx] += dt
-            state = global_states.copy()
-
-            # Propose and enforce action
+            state = current_global_state.copy()
+            
+            # Select action for this agent
             action = self._select_traffic_light_action(idx, state)
+            
+            actions.append(action)
+            states_for_agents.append(state)
+        
+        # Apply all actions simultaneously
+        for idx, (light, action) in enumerate(zip(self.traffic_lights, actions)):
             new_state_enum = list(LightState)[action]
             light.update(new_state_enum)
-
-            # Reset time_in_state and prev_action if the action changes
+            
+            # Reset time_in_state if action changed
             if action != self.prev_action[idx]:
                 self.prev_action[idx] = action
                 self.time_in_state[idx] = 0.0
-
-            # Calculate reward
+        
+        # Get next global state AFTER all actions have been applied
+        next_global_state = self._build_global_state()
+        
+        # Calculate rewards and store transitions
+        for idx, (light, action, state) in enumerate(zip(self.traffic_lights, actions, states_for_agents)):
+            new_state_enum = list(LightState)[action]
+            
+            # Calculate reward based on the resulting state
             reward = self._calculate_reward(light, new_state_enum)
-            done = False  # Not used, but needed for compatibility
-
-            # Update agent and store transition
-            next_state = state
-            loss = self.agents[idx].update()
+            
+            # Store transition with correct next_state
+            next_state = next_global_state.copy()
+            done = False
             self.agents[idx].store(state, action, reward, next_state, done)
-
+            
+            # Update agent
+            loss = self.agents[idx].update()
+            
             # Log information
-            self.logger.info(
-                f"Agent {idx}: action={new_state_enum.name}, time={round(self.time_in_state[idx], 2)}, "
-                f"moved={reward}, stopped={reward}, reward={round(reward, 2)}, loss={loss}"
-            )
-
+            if loss is not None:
+                self.logger.info(
+                    f"Agent {idx}: action={new_state_enum.name}, time={round(self.time_in_state[idx], 2)}, "
+                    f"reward={round(reward, 2)}, loss={round(loss, 4)}, epsilon={round(self.agents[idx].epsilon, 3)}"
+                )
+            else:
+                self.logger.info(
+                    f"Agent {idx}: action={new_state_enum.name}, time={round(self.time_in_state[idx], 2)}, "
+                    f"reward={round(reward, 2)}, epsilon={round(self.agents[idx].epsilon, 3)}"
+                )
+        
+        # Update target networks periodically
         self.tick += 1
         if self.tick % 100 == 0:
             for agent in self.agents:
